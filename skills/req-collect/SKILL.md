@@ -1,6 +1,7 @@
 ---
 name: req-collect
-description: 需求收集访谈。把散乱、模糊、多轮的需求输入收敛为要素齐全、可直接进开发的结构化需求文档。触发词：需求收集、收集需求、提需求、整理需求、收敛需求、requirement collection。Triggers: "collect requirements", "requirement gathering".
+description: >-
+  需求收集访谈。把散乱、模糊、多轮的需求输入收敛为要素齐全、可直接进开发的结构化需求文档。触发词：需求收集、收集需求、提需求、整理需求、收敛需求、requirement collection。Triggers: "collect requirements", "requirement gathering".
 ---
 
 # 需求收集访谈（req-collect）
