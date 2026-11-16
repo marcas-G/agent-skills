@@ -1,0 +1,41 @@
+{
+  "name": "agent-skills",
+  "owner": {
+    "name": "marcas-G"
+  },
+  "metadata": {
+    "description": "Reusable Agent Skills: Claude Code native plugins and portable Agent Skills."
+  },
+  "plugins": [
+    {
+      "name": "plainkit",
+      "source": "./plugins/plainkit",
+      "description": "Plain-language explanation, terminology unpacking, and open-ended cross-domain exploration."
+    },
+    {
+      "name": "req-collector",
+      "source": "./plugins/req-collector",
+      "description": "Stateful requirements interviewing and specification drafting."
+    },
+    {
+      "name": "fractal",
+      "source": "./plugins/fractal",
+      "description": "Recursive systems engineering with state, stage commands and hooks."
+    },
+    {
+      "name": "refactor-agent",
+      "source": "./plugins/refactor-agent",
+      "description": "Comprehension-first code refactoring with human decision gates."
+    },
+    {
+      "name": "test-enforcer",
+      "source": "./plugins/test-enforcer",
+      "description": "Deterministic test verification, mutation testing and stop gate."
+    },
+    {
+      "name": "optloop",
+      "source": "./plugins/optloop",
+      "description": "Docker-isolated iterative optimization supervisor."
+    }
+  ]
+}
