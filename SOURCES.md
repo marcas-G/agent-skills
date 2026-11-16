@@ -11,7 +11,7 @@ This repository consolidates **general-purpose** skills and Claude Code plugins 
 | `plugins/test-enforcer/` | https://github.com/marcas-G/test-enforcer (main) | Full plugin runtime |
 | `plugins/optloop/` | https://github.com/marcas-G/optloop (master; original `plugins/optloop/` subfolder) | Full plugin runtime |
 
-Portable `skills/plain`, `skills/termcard`, `skills/cross-domain-exploration`, and `skills/req-collect` are direct skill copies (including references/examples). Other top-level skill entrypoints are cross-agent adapters and **must not be confused with full enforcement or hooks**.
+Portable `skills/plain`, `skills/termcard`, `skills/cross-domain-exploration`, and `skills/req-collect` mirror the original skill instructions (including references/examples). The `req-collect` YAML description was normalized to a folded scalar in both mirrored copies so strict YAML-based agent loaders can parse it; its workflow body is unchanged. Other top-level skill entrypoints are cross-agent adapters and **must not be confused with full enforcement or hooks**.
 
 The private original repositories `req-collector`, `refactor-agent`, and `test-enforcer` were selectively copied into this **public** consolidated distribution at the repository owner's request. No engineering notes or project-specific state from those repositories were copied.
 
