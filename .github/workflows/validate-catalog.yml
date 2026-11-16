@@ -1,4 +1,4 @@
-name: Validate skill catalog
+name: Validate marketplace and skills
 
 on:
   push:
@@ -13,7 +13,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install validation dependency
+      - name: Install validator dependency
         run: python -m pip install "PyYAML>=6,<7"
-      - name: Validate local structure
+      - name: Validate catalog, skill files and Marketplace
         run: python scripts/check_catalog.py
+      - name: Test cross-agent installer
+        run: python -m unittest discover -s tests -v
+      - name: Check Python syntax
+        run: python -m py_compile scripts/install.py scripts/check_catalog.py

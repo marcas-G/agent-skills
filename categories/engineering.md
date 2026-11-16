@@ -1,9 +1,9 @@
-# 系统与软件工程
+# 工程 / Engineering
 
-| 能力 | 入口 | 完整组成 |
+| Skill | Claude Code plugin | Portable behavior |
 |---|---|---|
-| [fractal](https://github.com/marcas-G/fractal) | `/fractal-start` | P0–P8 + 递归检查，状态机与 Gate |
-| [refactor-agent](https://github.com/marcas-G/refactor-agent) | `/refactor` | 内部六个 Skill + 状态与回滚流程 |
-| [test-enforcer](https://github.com/marcas-G/test-enforcer) | `/test-enforcer` | Skill + Agent + 验证脚本 + Hooks |
+| [fractal](../skills/fractal/SKILL.md) | [fractal](../plugins/fractal) | P0–P8 workflow; no automatic gates outside Claude |
+| [refactor-agent](../skills/refactor-agent/SKILL.md) | [refactor-agent](../plugins/refactor-agent) | Human-gated survey, diagnosis and batch refactoring |
+| [test-enforcer](../skills/test-enforcer/SKILL.md) | [test-enforcer](../plugins/test-enforcer) | Evidence-first tests; no automatic Stop hook outside Claude |
 
-这些均为**完整插件**，必须保留依赖及工具调用；内部 Skill 不单独发布。`refactor-agent` 和 `test-enforcer` 源仓库目前为私有，访问需要授权。
+完整插件：`/plugin install <name>@agent-skills`。Portable Skills 支持带 `_plugin/` 的运行资源，但不自动注册命令或 Hook。
