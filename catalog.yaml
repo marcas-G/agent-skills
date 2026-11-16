@@ -1,0 +1,113 @@
+schema_version: 1
+catalog_version: '0.1.0'
+updated_at: '2026-11-16'
+owner: marcas-G
+principles:
+  - '只索引通用能力；不复制或修改项目内部技能'
+  - '源仓库是唯一维护源，目录记录入口和依赖'
+  - 'Skill 文件存在不等于已安装或已运行验证'
+skills:
+  - id: plain
+    category: reasoning
+    kind: skill
+    description: '把专业内容翻译到读者已有知识空间，保留机制和边界'
+    triggers: ['说人话', '解释这段', '用我懂的领域讲']
+    repository: marcas-G/plainkit
+    branch: main
+    source_path: skills/plain/SKILL.md
+    entrypoint: plain
+    prerequisites: ['Claude Code 或兼容 Skills 的 Agent', '用户状态目录可写（长期记忆模式）']
+    version: '0.1.0 (plugin manifest; skill 文内记载 v0.1.1)'
+    status: indexed-not-executed
+  - id: termcard
+    category: reasoning
+    kind: skill
+    description: '术语五格解构：机制、来历、误导、重建、边界'
+    triggers: ['术语是什么意思', '为什么叫这个', '术语卡']
+    repository: marcas-G/plainkit
+    branch: main
+    source_path: skills/termcard/SKILL.md
+    entrypoint: termcard
+    prerequisites: ['Claude Code 或兼容 Skills 的 Agent', '用户术语库可写（长期积累模式）']
+    version: '0.1.0 (plugin manifest)'
+    status: indexed-not-executed
+  - id: cross-domain-exploration
+    category: reasoning
+    kind: skill
+    description: '从开放主题出发，在其他领域主动搜索非平凡启发，延迟收敛'
+    triggers: ['跨领域类比', '去其他领域找解法', '换个思路']
+    repository: marcas-G/plainkit
+    branch: main
+    source_path: skills/cross-domain-exploration/SKILL.md
+    entrypoint: cross-domain-exploration
+    prerequisites: ['Claude Code 或兼容 Skills 的 Agent', '外部搜索工具可选；不可用时必须说明来源局限']
+    version: '0.1.0 (plugin manifest)'
+    status: indexed-not-executed
+  - id: req-collect
+    category: requirements
+    kind: plugin
+    description: '多轮访谈，形成结构化、可追溯的需求文档'
+    triggers: ['需求收集', '整理需求', 'requirement gathering']
+    repository: marcas-G/req-collector
+    branch: main
+    source_path: skills/req-collect/SKILL.md
+    entrypoint: '/req-collector:req'
+    prerequisites: ['Claude Code 插件机制', '项目目录可写（docs/requirements/）']
+    version: '0.1.0'
+    status: indexed-not-executed
+  - id: fractal
+    category: engineering
+    kind: plugin-suite
+    description: '递归需求驱动系统工程；10 个阶段/递归 Skill 作为一套插件维护'
+    triggers: ['系统工程', 'fractal-start', '递归分解']
+    repository: marcas-G/fractal
+    branch: main
+    source_path: skills/fractal-p0-problem/SKILL.md
+    entrypoint: '/fractal-start'
+    prerequisites: ['Claude Code 插件机制', 'Python 3', 'macOS / Linux / WSL / Git-Bash（README 所述）']
+    version: '0.2.0'
+    status: indexed-not-executed
+  - id: refactor-agent
+    category: engineering
+    kind: plugin-suite
+    description: '代码库理解、诊断、规划、改造及同步；6 个内部 Skill 不独立发布'
+    triggers: ['重构', '理解代码库', 'refactor']
+    repository: marcas-G/refactor-agent
+    branch: main
+    source_path: refactor-agent/skills/refactor-survey/SKILL.md
+    entrypoint: '/refactor'
+    prerequisites: ['Claude Code 插件机制', 'Git 工作区和写入权限']
+    version: '0.1.0'
+    status: indexed-not-executed
+  - id: test-enforcer
+    category: engineering
+    kind: plugin
+    description: '脚本独立验证、变异测试、证据包和完成门禁'
+    triggers: ['严苛测试', '补测', '测试门禁']
+    repository: marcas-G/test-enforcer
+    branch: main
+    source_path: skills/test-enforcer/SKILL.md
+    entrypoint: '/test-enforcer'
+    prerequisites: ['Claude Code 插件机制', 'Python 3', '按项目语言配置测试工具链']
+    version: '0.1.0'
+    status: indexed-not-executed
+  - id: optloop
+    category: automation
+    kind: plugin-suite
+    description: 'Docker 隔离的持续优化监督器；保留控制入口和运行时内部技能'
+    triggers: ['持续优化循环', 'optloop start', '启动自动优化']
+    repository: marcas-G/optloop
+    branch: master
+    source_path: plugins/optloop/skills/start-loop/SKILL.md
+    entrypoint: '/optloop:start-loop'
+    prerequisites: ['bash', 'Python 3', 'Docker daemon', '容器中可用 Claude CLI 和相应认证配置']
+    version: '0.1.36'
+    status: indexed-not-executed
+exclusions:
+  project_local: [factor-loop, stock, paperfactory, opencode]
+  generated_or_evaluation: [skill-compiler]
+  domain_specific: [greet]
+notes:
+  - '分类依据：2026-11-12 文件级盘点及 2026-11-16 仓库主分支文件、插件清单核验'
+  - '本目录中的单一 source_path 是代表性入口，不代表插件完整文件列表；插件必须从原仓库安装'
+  - '仓库的 README/manifest 更新以源仓库实际合并为准；目录不追踪本地未推送分支'
