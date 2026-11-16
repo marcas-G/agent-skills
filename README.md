@@ -1,84 +1,133 @@
-# agent-skills — 通用 Agent Skill 索引
+# Agent Skills Marketplace
 
-统一发现、统一分类、分仓维护、按需安装。
+**中文** | [English](README.en.md)
 
-**本仓库只维护能力目录与校验工具，不复制、移动或重写现有项目的 Skill 源码。** 源仓库是唯一维护源。
+一套可统一安装、跨 Agent 复用的通用技能集合。含 **8 个可发现的 Agent Skills** 和 **6 套完整 Claude Code 插件**，全部源码集中在本仓库，不再只是索引链接。
 
-## 快速导航
+> 说明：Claude Code 的 Marketplace 提供完整命令、Hook 和运行时；其他 Agent 使用开放的 `SKILL.md` 目录及兼容安装器。跨 Agent 的“可发现/可调用”并不意味着自动继承 Claude Code 的强制门禁或后台进程。
 
-| 类别 | 能力 | 来源仓库 | 调用入口 |
-| --- | --- | --- | --- |
-| 认知与探索 | [plain](https://github.com/marcas-G/plainkit/blob/main/skills/plain/SKILL.md) | [plainkit](https://github.com/marcas-G/plainkit) | `plain` |
-| 认知与探索 | [termcard](https://github.com/marcas-G/plainkit/blob/main/skills/termcard/SKILL.md) | plainkit | `termcard` |
-| 认知与探索 | [cross-domain-exploration](https://github.com/marcas-G/plainkit/blob/main/skills/cross-domain-exploration/SKILL.md) | plainkit | `cross-domain-exploration` |
-| 需求 | `req-collect` | `req-collector`（私有） | `/req-collector:req` |
-| 系统工程 | [fractal](https://github.com/marcas-G/fractal) | fractal | `/fractal-start` |
-| 软件工程 | `refactor-agent` | `refactor-agent`（私有） | `/refactor` |
-| 软件工程 | `test-enforcer` | `test-enforcer`（私有） | `/test-enforcer` |
-| 自动化优化 | [optloop](https://github.com/marcas-G/optloop) | optloop | `/optloop:start-loop` |
+## 能力一览
 
-**统计口径：8 个通用能力单元。** 不是将内部子技能、评测样本或生成产物逐个算作可独立使用的 Skill。私有源仓库需有相应访问权限，不因本目录公开而自动开放。
+| Skill / 能力 | 用途 | Claude Code Marketplace 包 | 其他 Agent |
+|---|---|---|---|
+| [plain](skills/plain/SKILL.md) | 专业内容通俗解释、领域桥 | `plainkit` | 原生说明型 Skill |
+| [termcard](skills/termcard/SKILL.md) | 五格术语解构 | `plainkit` | 原生说明型 Skill |
+| [cross-domain-exploration](skills/cross-domain-exploration/SKILL.md) | 跨领域真实搜索、开放启发 | `plainkit` | 原生说明型 Skill |
+| [req-collect](skills/req-collect/SKILL.md) | 多轮需求访谈和落档 | `req-collector` | Skill + references |
+| [fractal](skills/fractal/SKILL.md) | 递归系统工程与阶段门禁 | `fractal` | 工作流适配；脚本可选 |
+| [refactor-agent](skills/refactor-agent/SKILL.md) | 梳理式重构、逐批回滚 | `refactor-agent` | 工作流适配；脚本可选 |
+| [test-enforcer](skills/test-enforcer/SKILL.md) | 严格测试、证据和变异验证 | `test-enforcer` | 工作流适配；脚本可选 |
+| [optloop](skills/optloop/SKILL.md) | 隔离式持续优化循环 | `optloop` | 工作流适配；运行时可选 |
 
-## 使用方式
+这些能力分为四类：[认知与探索](categories/reasoning.md)、[需求](categories/requirements.md)、[工程](categories/engineering.md)、[优化自动化](categories/automation.md)。
 
-1. 查看 [catalog.yaml](catalog.yaml) 的使用场景、源路径、入口、依赖与状态。
-2. 从原仓库安装对应 Skill 或完整插件；不要只复制插件内部的某个 `SKILL.md`。
-3. 根据原仓库 README 配置依赖、认证和运行环境。
+## 安装 A：Claude Code Marketplace（完整功能）
 
-> `indexed-not-executed` 表示已纳入目录但尚未作实际安装执行验证，**不代表已安装或运行通过**。
+在 Claude Code 中运行：
 
-## 分类导航
-
-- [认知与探索](categories/reasoning.md)：解释、术语拆解、开放式跨领域启发
-- [需求](categories/requirements.md)：多轮访谈与需求整理
-- [系统及软件工程](categories/engineering.md)：递归系统工程、重构、测试门禁
-- [自动化](categories/automation.md)：隔离式持续优化循环
-
-## 能力边界
-
-- `plain` 的「领域桥」用于**理解陌生内容**；`cross-domain-exploration` 通过检索真实外领域线索**扩展问题空间**，不要求严格同构或立即验证。
-- `termcard` 针对单个术语作深度解构，与 `plain` 的长段解释互补。
-- `req-collect` 聚焦需求收集；`fractal` 提供从现实问题、需求和架构到验证的递归系统工程。
-- `fractal` 的 P0–P8/递归检查、`refactor-agent` 六个内部 Skill、`optloop` 的控制与运行时技能均作为**完整插件**维护，不拆开迁移。
-
-## 不纳入本目录的内容
-
-- `factor-loop`、`stock`、`paperfactory`、`opencode`：项目局部或领域专用 Skill，保留原位，不修改。
-- `skill-compiler`：生成结果和评测对照，不作为独立发布 Skill 计数。
-- `greet`：场景专用工具，暂不纳入通用目录。
-
-不因为某个项目内部 Skill 包含通用思想，就从项目抽走它；只有独立维护、真实可复用时才考虑新增能力。
-
-## 本地校验与 CI
-
-```bash
-python3 -m pip install 'PyYAML>=6,<7'
-python3 scripts/check_catalog.py
+```text
+/plugin marketplace add marcas-G/agent-skills
+/plugin install plainkit@agent-skills
+/plugin install req-collector@agent-skills
+/plugin install fractal@agent-skills
+/plugin install refactor-agent@agent-skills
+/plugin install test-enforcer@agent-skills
+/plugin install optloop@agent-skills
 ```
 
-[GitHub Actions](.github/workflows/validate-catalog.yml) 在 push 与 PR 时执行结构校验：检查 YAML、唯一 ID、分类映射与源路径格式。**它不访问原仓库，也不执行安装测试。**
+只安装需要的插件即可，无须全部安装。Claude Code 可从仓库根目录的 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) 发现六个插件。完整插件位于 `plugins/`，保留其 `skills/`、`commands/`、`hooks/`、`agents/`、`scripts/` 等依赖（以实际插件为准）。
 
-## 维护规则
+- `plainkit` 一次提供三个认知 Skill。
+- `fractal`、`test-enforcer` 的门禁依赖 Claude Code Hooks 和 Python。
+- `optloop` 需要 bash、Python、Docker、容器内 Claude CLI 及可用认证。安装不等于启动。
+- 原有插件的用户状态、密钥和环境依赖**不会**放进本仓库，也不会由安装过程自动配置。
 
-1. `catalog.yaml` 是唯一机器可读注册源。一个能力一个条目；不按 `SKILL.md` 数量计数。
-2. 原仓库维护原始代码、Hook、脚本和插件版本；目录不复制源码或个人状态。
-3. 新增能力时核实独立性、用户入口、工具依赖、功能边界和访问权限。
-4. 任何新增、合并或下线都只修改本索引；项目局部 Skill 保持原状。
-5. 只有实际安装测试获得证据后，才能更新 `status`，不要根据文件存在就声明运行可用。
+## 安装 B：Codex / Cursor / OpenCode / Gemini CLI / GitHub Copilot
+
+先将本仓库克隆到本地：
+
+```bash
+git clone https://github.com/marcas-G/agent-skills.git
+cd agent-skills
+```
+
+然后使用 Python 3 标准库安装器（无额外 pip 依赖）：
+
+```bash
+# 通用目录 ~/.agents/skills；Codex、Cursor、OpenCode、Gemini CLI、Copilot 均能发现
+python3 scripts/install.py --agent universal --scope user
+
+# 或选择 Agent 的专用目录：codex / cursor / opencode / gemini / copilot / claude
+python3 scripts/install.py --agent opencode --scope user
+python3 scripts/install.py --agent cursor --scope project --target /path/to/your-project
+
+# 按需安装，不覆盖已有技能
+python3 scripts/install.py --agent codex --only plain termcard cross-domain-exploration
+
+# 预览与更新
+python3 scripts/install.py --agent universal --dry-run
+python3 scripts/install.py --agent universal --force
+
+# 不打包 4 个复杂 Skill 的原生脚本资源（仅保留流程说明）
+python3 scripts/install.py --agent universal --no-runtime
+```
+
+Windows 可将 `python3` 替换为 `py -3` 或 `python`；安装器使用跨平台 Python 文件操作。默认用户级安装；`--scope project` 使用当前目录，`--target` 可指定目标项目或用户目录。
+
+**兼容范围**：
+
+| Agent | 用户级 Skill 目录 | 项目级 Skill 目录 |
+|---|---|---|
+| Codex | `~/.agents/skills/` | `.agents/skills/` |
+| Cursor | `~/.cursor/skills/` | `.cursor/skills/` |
+| OpenCode | `~/.config/opencode/skills/` | `.opencode/skills/` |
+| Gemini CLI | `~/.gemini/skills/` | `.gemini/skills/` |
+| GitHub Copilot CLI | `~/.copilot/skills/` | `.github/skills/` |
+| Claude Code（Skill 模式） | `~/.claude/skills/` | `.claude/skills/` |
+
+其他 Agent 建议优先使用 `universal`（`.agents/skills`）路径；Claude Code 要使用完整插件功能，请选择 Marketplace 安装而非 Skill 模式。详细情况见 [兼容性说明](docs/compatibility.md)。
 
 ## 目录结构
 
 ```text
 agent-skills/
+├── .claude-plugin/marketplace.json    # Claude Code Marketplace 注册表
+├── plugins/                           # 六套原生插件完整运行包
+│   ├── plainkit/
+│   ├── req-collector/
+│   ├── fractal/
+│   ├── refactor-agent/
+│   ├── test-enforcer/
+│   └── optloop/
+├── skills/                            # 八个跨 Agent SKILL.md 入口
+│   ├── plain/  termcard/  cross-domain-exploration/
+│   ├── req-collect/
+│   └── fractal/  refactor-agent/  test-enforcer/  optloop/
+├── scripts/install.py                 # 多 Agent 安装器
+├── scripts/check_catalog.py           # 内容/Marketplace 校验
+├── tests/                             # 安装器测试
+├── catalog.yaml                       # 统一机器可读元数据
+├── categories/                        # 分类导航
+├── docs/compatibility.md              # 兼容与能力边界
+├── SOURCES.md                         # 原始仓库、复制范围和许可证说明
 ├── README.md
-├── catalog.yaml
-├── categories/
-│   ├── reasoning.md
-│   ├── requirements.md
-│   ├── engineering.md
-│   └── automation.md
-├── scripts/check_catalog.py
-└── .github/workflows/validate-catalog.yml
+└── README.en.md
 ```
 
-首次盘点依据为 2026-11-12 的 21 仓库文件级清单；2026-11-16 已核查 8 个代表性源 Skill 文件。未覆盖其他分支、未推送文件或第三方仓库。
+## 核心区别：通用 Skill 与原生插件
+
+`plain` 负责把专业内容解释清楚，`cross-domain-exploration` 负责主动向其他领域寻找值得借鉴的新视角；两者不是同一类任务。
+
+`fractal`、`refactor-agent`、`test-enforcer`、`optloop` 在 Claude Code 中提供原生工作流。跨 Agent 安装会将这四个能力所需的插件文件复制到对应 Skill 的 `_plugin/`，方便在允许的环境中手动调用脚本，但**不会自动注入 Hook、注册 Claude 专用子代理或启动守护进程**。不要将文本纪律误报为实际强制检查。
+
+## 验证与来源
+
+```bash
+python3 -m pip install "PyYAML>=6,<7"
+python3 scripts/check_catalog.py
+python3 -m unittest discover -s tests -v
+```
+
+CI 检查 Marketplace、8 个 Skill 的头部元数据、插件资产完整性和安装器行为。通过这些测试仅表示**结构与本地安装通过**，不表示各平台实机集成已全部跑通。
+
+源码来源、是否私有、复制边界见 [SOURCES.md](SOURCES.md)。本仓库是统一发布源，原项目仓库不作修改；项目专属 Skill（如量化因子工作流和 paperfactory 内嵌技能）仍留在原项目。

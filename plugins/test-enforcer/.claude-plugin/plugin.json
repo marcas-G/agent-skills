@@ -1,0 +1,6 @@
+{
+  "name": "test-enforcer",
+  "version": "0.1.0",
+  "description": "严苛测试纪律：确定性验证 + 完成宣告门禁。LLM 只生成测试，一切结论来自独立脚本执行。",
+  "author": { "name": "lgao" }
+}

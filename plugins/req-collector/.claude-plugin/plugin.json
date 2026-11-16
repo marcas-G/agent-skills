@@ -1,0 +1,5 @@
+{
+  "name": "req-collector",
+  "description": "需求收集访谈插件：把散乱、模糊、多轮的需求输入收敛为要素齐全、可直接进开发的结构化需求文档。Requirement collection interviewer: converges scattered, vague, multi-round inputs into structured requirement docs.",
+  "version": "0.1.0"
+}

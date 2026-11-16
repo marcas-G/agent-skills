@@ -1,0 +1,380 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fail() {
+  echo "[optloop-init] ERROR: $*" >&2
+  exit 1
+}
+
+info() {
+  echo "[optloop-init] $*"
+}
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || fail "missing required command: $1"
+}
+
+file_fingerprint() {
+  local path="$1"
+  local out=""
+  if command -v sha256sum >/dev/null 2>&1; then
+    out="$(sha256sum "$path")"
+    printf '%s' "${out%% *}"
+  elif command -v shasum >/dev/null 2>&1; then
+    out="$(shasum -a 256 "$path")"
+    printf '%s' "${out%% *}"
+  else
+    out="$(cksum "$path")"
+    printf 'cksum-%s' "${out%% *}"
+  fi
+}
+
+pid_is_alive() {
+  local pid="$1"
+  [ -n "$pid" ] || return 1
+  case "$pid" in
+    *[!0-9]*)
+      return 1
+      ;;
+  esac
+  kill -0 "$pid" 2>/dev/null
+}
+
+wait_for_container_absent() {
+  local name="$1"
+  local timeout_sec="${2:-30}"
+  local deadline=$((SECONDS + timeout_sec))
+  while [ "$SECONDS" -le "$deadline" ]; do
+    if ! docker container inspect "$name" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  return 1
+}
+
+acquire_init_lock() {
+  local lock_dir="$1"
+  local pid_file="$lock_dir/pid"
+  local old_pid=""
+
+  while ! mkdir "$lock_dir" 2>/dev/null; do
+    if [ -f "$pid_file" ]; then
+      old_pid="$(tr -d '[:space:]' < "$pid_file" 2>/dev/null || true)"
+      if pid_is_alive "$old_pid"; then
+        fail "another optloop init is already running for this project: $lock_dir (pid $old_pid)"
+      fi
+      info "removing stale init lock: $lock_dir"
+      rm -rf "$lock_dir"
+      continue
+    fi
+
+    info "removing stale init lock without pid: $lock_dir"
+    rm -rf "$lock_dir"
+  done
+
+  printf '%s\n' "$$" > "$pid_file"
+}
+
+sanitize_name() {
+  local raw="$1"
+  raw="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+  raw="$(printf '%s' "$raw" | sed 's/[^a-z0-9_.-]/-/g')"
+  raw="$(printf '%s' "$raw" | sed 's/--*/-/g; s/^-//; s/-$//')"
+  printf '%s' "${raw:-optloop}"
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+PROJECT_DIR_RAW="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+[ -d "$PROJECT_DIR_RAW" ] || fail "project dir does not exist: $PROJECT_DIR_RAW"
+PROJECT_DIR="$(cd "$PROJECT_DIR_RAW" && pwd -P)"
+PROJECT_NAME="$(basename "$PROJECT_DIR")"
+SAFE_PROJECT_NAME="$(sanitize_name "$PROJECT_NAME")"
+
+PLUGIN_ROOT_RAW="${CLAUDE_PLUGIN_ROOT:-$DEFAULT_PLUGIN_ROOT}"
+[ -d "$PLUGIN_ROOT_RAW" ] || fail "plugin root does not exist: $PLUGIN_ROOT_RAW"
+PLUGIN_ROOT="$(cd "$PLUGIN_ROOT_RAW" && pwd -P)"
+PLUGIN_DATA_DEFAULT="${HOME:-$PROJECT_DIR/.optloop}/.claude/plugins/data/optloop/${SAFE_PROJECT_NAME}"
+PLUGIN_DATA_RAW="${CLAUDE_PLUGIN_DATA:-$PLUGIN_DATA_DEFAULT}"
+mkdir -p "$PLUGIN_DATA_RAW"
+PLUGIN_DATA="$(cd "$PLUGIN_DATA_RAW" && pwd -P)"
+
+need_cmd bash
+need_cmd docker
+need_cmd sed
+need_cmd tr
+need_cmd find
+need_cmd grep
+need_cmd tee
+
+IMAGE_TAG_DEFAULT="optloop-${SAFE_PROJECT_NAME}:local"
+CONTAINER_NAME_DEFAULT="optloop-${SAFE_PROJECT_NAME}"
+
+IMAGE_TAG="${OPTLOOP_IMAGE_TAG:-$IMAGE_TAG_DEFAULT}"
+CONTAINER_NAME="${OPTLOOP_CONTAINER_NAME:-$CONTAINER_NAME_DEFAULT}"
+DOCKERFILE_OVERRIDE="${OPTLOOP_DOCKERFILE_PATH:-}"
+OPTLOOP_BASE_IMAGE_VALUE="${OPTLOOP_BASE_IMAGE:-node:20-bookworm-slim}"
+OPTLOOP_NPM_REGISTRY_VALUE="${OPTLOOP_NPM_REGISTRY:-}"
+
+RUNTIME_ROOT="${PLUGIN_DATA}/runtime"
+STATE_DIR="${RUNTIME_ROOT}/state"
+LOG_DIR="${RUNTIME_ROOT}/logs"
+WORK_DIR="${RUNTIME_ROOT}/work"
+CONFIG_DIR="${PLUGIN_DATA}/config"
+CACHE_DIR="${PLUGIN_DATA}/cache"
+LOCK_DIR="${RUNTIME_ROOT}/locks"
+BIN_DIR="${PLUGIN_ROOT}/bin"
+ENV_FILE="${CONFIG_DIR}/paths.env"
+RUNTIME_HOME_HOST="${PROJECT_DIR}/.optloop/runtime/home"
+RUNTIME_HOME_CONTAINER="/opt/optloop-home"
+
+mkdir -p "$STATE_DIR" "$LOG_DIR" "$WORK_DIR" "$CONFIG_DIR" "$CACHE_DIR" "$LOCK_DIR" "$RUNTIME_HOME_HOST/.claude"
+
+SETTINGS_HOST_PATH=""
+if [ -n "${CLAUDE_SETTINGS_PATH:-}" ] && [ -f "${CLAUDE_SETTINGS_PATH}" ]; then
+  SETTINGS_HOST_PATH="${CLAUDE_SETTINGS_PATH}"
+elif [ -f "${HOME:-}/.claude/settings.json" ]; then
+  SETTINGS_HOST_PATH="${HOME}/.claude/settings.json"
+elif [ -f "${HOME:-}/.claude/setting.json" ]; then
+  SETTINGS_HOST_PATH="${HOME}/.claude/setting.json"
+fi
+
+HOST_CLAUDE_DIR=""
+if [ -n "${SETTINGS_HOST_PATH}" ]; then
+  HOST_CLAUDE_DIR="$(cd "$(dirname "$SETTINGS_HOST_PATH")" && pwd -P)"
+elif [ -d "${HOME:-}/.claude" ]; then
+  HOST_CLAUDE_DIR="$(cd "${HOME}/.claude" && pwd -P)"
+fi
+
+INIT_LOCK="${LOCK_DIR}/init.lock"
+acquire_init_lock "$INIT_LOCK"
+trap 'rm -rf "$INIT_LOCK"' EXIT
+
+# 1) repair executable permissions for bundled scripts
+if [ -d "$BIN_DIR" ]; then
+  find "$BIN_DIR" -maxdepth 1 -type f -exec chmod +x {} +
+fi
+
+# 2) resolve Dockerfile
+DOCKERFILE_PATH=""
+if [ -n "$DOCKERFILE_OVERRIDE" ]; then
+  if [ -f "$DOCKERFILE_OVERRIDE" ]; then
+    DOCKERFILE_PATH="$DOCKERFILE_OVERRIDE"
+  else
+    fail "OPTLOOP_DOCKERFILE_PATH does not exist: $DOCKERFILE_OVERRIDE"
+  fi
+else
+  for candidate in \
+    "$PROJECT_DIR/Dockerfile" \
+    "$PROJECT_DIR/docker/Dockerfile" \
+    "$PROJECT_DIR/.docker/Dockerfile" \
+    "$PLUGIN_ROOT/docker/Dockerfile.example"
+  do
+    if [ -f "$candidate" ]; then
+      DOCKERFILE_PATH="$candidate"
+      break
+    fi
+  done
+fi
+
+[ -n "$DOCKERFILE_PATH" ] || fail "no Dockerfile found under $PROJECT_DIR and no bundled Dockerfile.example found"
+DOCKERFILE_SHA="$(file_fingerprint "$DOCKERFILE_PATH")"
+
+# 3) write persistent path/env config
+cat > "$ENV_FILE" <<EOF
+PROJECT_DIR=$PROJECT_DIR
+PLUGIN_ROOT=$PLUGIN_ROOT
+PLUGIN_DATA=$PLUGIN_DATA
+RUNTIME_ROOT=$RUNTIME_ROOT
+STATE_DIR=$STATE_DIR
+LOG_DIR=$LOG_DIR
+WORK_DIR=$WORK_DIR
+CACHE_DIR=$CACHE_DIR
+RUNTIME_HOME_HOST=$RUNTIME_HOME_HOST
+RUNTIME_HOME_CONTAINER=$RUNTIME_HOME_CONTAINER
+SETTINGS_HOST_PATH=$SETTINGS_HOST_PATH
+HOST_CLAUDE_DIR=$HOST_CLAUDE_DIR
+DOCKERFILE_PATH=$DOCKERFILE_PATH
+DOCKERFILE_SHA=$DOCKERFILE_SHA
+OPTLOOP_BASE_IMAGE=$OPTLOOP_BASE_IMAGE_VALUE
+OPTLOOP_NPM_REGISTRY=$OPTLOOP_NPM_REGISTRY_VALUE
+IMAGE_TAG=$IMAGE_TAG
+CONTAINER_NAME=$CONTAINER_NAME
+EOF
+
+IMAGE_STATUS="reused"
+CONTAINER_STATUS="created"
+
+build_image_with_retry() {
+  local action="$1"
+  local max_attempts="${OPTLOOP_BUILD_RETRIES:-3}"
+  local attempt=1
+  local build_cmd=()
+  local build_log="$LOG_DIR/docker-build.log"
+
+  case "$max_attempts" in
+    ''|*[!0-9]*)
+      max_attempts=3
+      ;;
+  esac
+  if [ "$max_attempts" -lt 1 ]; then
+    max_attempts=1
+  fi
+
+  while [ "$attempt" -le "$max_attempts" ]; do
+    info "$action image $IMAGE_TAG from $DOCKERFILE_PATH (attempt $attempt/$max_attempts)"
+    : > "$build_log"
+    build_cmd=(
+      docker build
+      -f "$DOCKERFILE_PATH"
+      --label "optloop.project_dir=$PROJECT_DIR"
+      --label "optloop.plugin_root=$PLUGIN_ROOT"
+      --label "optloop.dockerfile_path=$DOCKERFILE_PATH"
+      --label "optloop.dockerfile_sha=$DOCKERFILE_SHA"
+      --label "optloop.base_image=$OPTLOOP_BASE_IMAGE_VALUE"
+      --label "optloop.npm_registry=$OPTLOOP_NPM_REGISTRY_VALUE"
+      --build-arg "OPTLOOP_BASE_IMAGE=$OPTLOOP_BASE_IMAGE_VALUE"
+      --build-arg "OPTLOOP_NPM_REGISTRY=$OPTLOOP_NPM_REGISTRY_VALUE"
+    )
+    if [ "${OPTLOOP_BUILD_NO_CACHE:-0}" = "1" ]; then
+      build_cmd+=(--no-cache)
+    fi
+    build_cmd+=(-t "$IMAGE_TAG" "$PROJECT_DIR")
+
+    if "${build_cmd[@]}" 2>&1 | tee "$build_log"; then
+      return 0
+    fi
+
+    if [ "$attempt" -lt "$max_attempts" ]; then
+      info "docker build failed; retrying in 2s"
+      sleep 2
+    fi
+    attempt=$((attempt + 1))
+  done
+
+  return 1
+}
+
+is_registry_timeout_error() {
+  local build_log="$1"
+  grep -qiE 'DeadlineExceeded|failed to fetch anonymous token|i/o timeout|TLS handshake timeout|context deadline exceeded|network is unreachable|dial tcp' "$build_log"
+}
+
+# 4) build image if missing or stale
+IMAGE_EXISTS="false"
+IMAGE_DOCKERFILE_SHA=""
+IMAGE_BASE_IMAGE=""
+IMAGE_NPM_REGISTRY=""
+IMAGE_BUILD_LOG="$LOG_DIR/docker-build.log"
+if docker image inspect "$IMAGE_TAG" >/dev/null 2>&1; then
+  IMAGE_EXISTS="true"
+  IMAGE_DOCKERFILE_SHA="$(docker image inspect -f '{{ index .Config.Labels "optloop.dockerfile_sha" }}' "$IMAGE_TAG" 2>/dev/null || true)"
+  IMAGE_BASE_IMAGE="$(docker image inspect -f '{{ index .Config.Labels "optloop.base_image" }}' "$IMAGE_TAG" 2>/dev/null || true)"
+  IMAGE_NPM_REGISTRY="$(docker image inspect -f '{{ index .Config.Labels "optloop.npm_registry" }}' "$IMAGE_TAG" 2>/dev/null || true)"
+fi
+
+if [ "$IMAGE_EXISTS" != "true" ]; then
+  build_image_with_retry "building" || {
+    if is_registry_timeout_error "$IMAGE_BUILD_LOG"; then
+      fail "docker build cannot reach registry. Set OPTLOOP_BASE_IMAGE to a reachable mirror, or set OPTLOOP_DOCKERFILE_PATH to your project Dockerfile. build_log=$IMAGE_BUILD_LOG"
+    fi
+    fail "docker build failed for image $IMAGE_TAG (build_log=$IMAGE_BUILD_LOG)"
+  }
+  IMAGE_STATUS="built"
+elif [ "${OPTLOOP_REBUILD_IMAGE:-0}" = "1" ] || [ "$IMAGE_DOCKERFILE_SHA" != "$DOCKERFILE_SHA" ] || [ "$IMAGE_BASE_IMAGE" != "$OPTLOOP_BASE_IMAGE_VALUE" ] || [ "$IMAGE_NPM_REGISTRY" != "$OPTLOOP_NPM_REGISTRY_VALUE" ]; then
+  build_image_with_retry "rebuilding" || {
+    if [ "${OPTLOOP_ALLOW_STALE_IMAGE_ON_BUILD_FAIL:-1}" = "1" ]; then
+      info "rebuild failed; reusing existing image $IMAGE_TAG because OPTLOOP_ALLOW_STALE_IMAGE_ON_BUILD_FAIL=1"
+      IMAGE_STATUS="reused-stale"
+    else
+      if is_registry_timeout_error "$IMAGE_BUILD_LOG"; then
+        fail "docker rebuild cannot reach registry. Set OPTLOOP_BASE_IMAGE to a reachable mirror, or set OPTLOOP_DOCKERFILE_PATH to your project Dockerfile. build_log=$IMAGE_BUILD_LOG"
+      fi
+      fail "docker rebuild failed for image $IMAGE_TAG (build_log=$IMAGE_BUILD_LOG)"
+    fi
+  }
+  if [ "$IMAGE_STATUS" != "reused-stale" ]; then
+    IMAGE_STATUS="rebuilt"
+  fi
+else
+  info "image already exists: $IMAGE_TAG"
+fi
+
+if [ "$IMAGE_STATUS" = "reused-stale" ]; then
+  info "image status: reused stale image (build failed)"
+fi
+
+# 5) always create a fresh container for the current plugin/project state
+if docker container inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+  info "removing existing container: $CONTAINER_NAME"
+  docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+  if ! wait_for_container_absent "$CONTAINER_NAME" 30; then
+    fail "container removal did not finish in time: $CONTAINER_NAME"
+  fi
+  CONTAINER_STATUS="recreated"
+fi
+
+attempt=1
+max_attempts=4
+while [ "$attempt" -le "$max_attempts" ]; do
+  info "creating+starting container $CONTAINER_NAME (attempt $attempt/$max_attempts)"
+  DOCKER_CMD=(docker run -d
+    --name "$CONTAINER_NAME"
+    -w /workspace
+    --label "optloop.project_dir=$PROJECT_DIR"
+    --label "optloop.plugin_root=$PLUGIN_ROOT"
+    --label "optloop.plugin_data=$PLUGIN_DATA"
+    --label "optloop.dockerfile_sha=$DOCKERFILE_SHA"
+    -v "$PROJECT_DIR:/workspace"
+    -v "$PLUGIN_DATA:/opt/optloop-data"
+    -v "$RUNTIME_HOME_HOST:$RUNTIME_HOME_CONTAINER"
+    -e OPTLOOP_PROJECT_DIR=/workspace
+    -e OPTLOOP_PLUGIN_DATA=/opt/optloop-data
+    -e HOME="$RUNTIME_HOME_CONTAINER"
+    -e PYTHONPATH=/workspace:/workspace/src
+  )
+  if [ -n "$SETTINGS_HOST_PATH" ]; then
+    DOCKER_CMD+=(-v "$SETTINGS_HOST_PATH:$RUNTIME_HOME_CONTAINER/.claude/settings.json:ro")
+  fi
+  if [ -n "$HOST_CLAUDE_DIR" ]; then
+    DOCKER_CMD+=(-v "$HOST_CLAUDE_DIR:$RUNTIME_HOME_CONTAINER/.claude-host:ro")
+  fi
+  DOCKER_CMD+=("$IMAGE_TAG")
+  RUN_OUTPUT="$("${DOCKER_CMD[@]}" 2>&1)" && RUN_RC=0 || RUN_RC=$?
+  if [ "$RUN_RC" -eq 0 ]; then
+    if [ "$CONTAINER_STATUS" = "created" ]; then
+      CONTAINER_STATUS="created+started"
+    elif [ "$CONTAINER_STATUS" = "recreated" ]; then
+      CONTAINER_STATUS="recreated+started"
+    fi
+    break
+  fi
+
+  if [ "$attempt" -eq "$max_attempts" ]; then
+    fail "failed to create/start container after $max_attempts attempts: $CONTAINER_NAME"
+  fi
+
+  if [ -n "${RUN_OUTPUT:-}" ]; then
+    info "docker run failed output: $RUN_OUTPUT"
+  fi
+  info "container startup failed, clearing residual state: $CONTAINER_NAME"
+  docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+  wait_for_container_absent "$CONTAINER_NAME" 30 || true
+  sleep 1
+  attempt=$((attempt + 1))
+done
+
+# 6) compact status summary
+cat <<EOF
+[optloop-init] project_dir=$PROJECT_DIR
+[optloop-init] plugin_root=$PLUGIN_ROOT
+[optloop-init] plugin_data=$PLUGIN_DATA
+[optloop-init] dockerfile_path=$DOCKERFILE_PATH
+[optloop-init] image_tag=$IMAGE_TAG
+[optloop-init] container_name=$CONTAINER_NAME
+[optloop-init] image_status=$IMAGE_STATUS
+[optloop-init] container_status=$CONTAINER_STATUS
+[optloop-init] env_file=$ENV_FILE
+EOF

@@ -1,0 +1,26 @@
+{
+  "description": "Repository optimization continuity hooks",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/skills/optloop-core/scripts/session_start.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/skills/optloop-core/scripts/session_stop.py\"",
+            "suppressOutput": true
+          }
+        ]
+      }
+    ]
+  }
+}

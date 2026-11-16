@@ -1,0 +1,18 @@
+{
+  "name": "refactor-agent",
+  "version": "0.1.0",
+  "description": "梳理式重构 agent：需求梳理 → 功能梳理 → 混乱识别 → 分批解耦改造 → 报告/落档。状态机内核 + 四决策点人工把关 + git 单批回退安全网；无测试项目自动降级为安全类重构。Comprehension-first refactoring with human-gated batches and per-batch rollback.",
+  "author": {
+    "name": "lgao"
+  },
+  "license": "MIT",
+  "keywords": [
+    "refactoring",
+    "comprehension-first",
+    "technical-debt",
+    "human-in-the-loop",
+    "git-safety-net"
+  ],
+  "homepage": "https://github.com/marcas-G/refactor-agent",
+  "repository": "https://github.com/marcas-G/refactor-agent"
+}

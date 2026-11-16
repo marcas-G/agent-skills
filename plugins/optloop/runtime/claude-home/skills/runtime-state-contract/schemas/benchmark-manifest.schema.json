@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RepositoryBenchmarkManifest",
+  "type": "object",
+  "required": [
+    "version"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string"
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "primary_metric": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "lower",
+            "higher"
+          ]
+        },
+        "unit": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "correctness": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "review_policy": {
+      "type": "string"
+    },
+    "known_weaknesses": {
+      "type": "array"
+    },
+    "next_improvements": {
+      "type": "array"
+    }
+  }
+}

@@ -1,6 +1,5 @@
-# 需求
+# 需求 / Requirements
 
-- [req-collect](https://github.com/marcas-G/req-collector)：多轮需求访谈、状态落盘、未决标记与结构化需求文档。入口 `/req-collector:req`。源仓库目前为私有，需相应权限。
-- 与 [fractal](https://github.com/marcas-G/fractal) 的区别：前者负责**收集并整理需求**，后者承担完整**递归系统工程**流程。
-
-按源插件方式安装，不要仅复制单个 `SKILL.md`。
+- [req-collect](../skills/req-collect/SKILL.md): 多轮需求收集、矛盾与未决记录 / Stateful requirements collection and unresolved item tracking.
+- [原生插件 / Native plugin](../plugins/req-collector): `/plugin install req-collector@agent-skills`.
+- [fractal](../skills/fractal/SKILL.md) 与其不同：`req-collect` 收集需求；`fractal` 处理全系统生命周期 / Requirements interview vs. lifecycle engineering.

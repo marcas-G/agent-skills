@@ -1,9 +1,9 @@
-# 认知与探索
+# 认知与探索 / Reasoning
 
-| 能力 | 用途 | 区分点 |
-|---|---|---|
-| [plain](https://github.com/marcas-G/plainkit/blob/main/skills/plain/SKILL.md) | 翻译专业内容 | 为已有读者知识空间建立可理解的机制表达 |
-| [termcard](https://github.com/marcas-G/plainkit/blob/main/skills/termcard/SKILL.md) | 术语解构 | 单术语的机制/来历/误导/重建/边界 |
-| [cross-domain-exploration](https://github.com/marcas-G/plainkit/blob/main/skills/cross-domain-exploration/SKILL.md) | 跨领域启发搜索 | 主动找真实跨域案例，不强制验证与结论 |
+| Skill | 用途 / Purpose |
+|---|---|
+| [plain](../skills/plain/SKILL.md) | 通俗解释、领域桥 / Translate expert concepts into familiar language |
+| [termcard](../skills/termcard/SKILL.md) | 术语五格解构 / Unpack terms into mechanism, origin, misdirection, reconstruction and limits |
+| [cross-domain-exploration](../skills/cross-domain-exploration/SKILL.md) | 跨领域真实检索与开放探索 / Search other disciplines for useful insights |
 
-均由 `plainkit` 原仓库维护，不在本索引复制源码。
+Claude Code 原生安装：`/plugin install plainkit@agent-skills`。完整运行包位于 [plugins/plainkit](../plugins/plainkit)。

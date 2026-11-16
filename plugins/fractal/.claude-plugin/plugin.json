@@ -1,0 +1,18 @@
+{
+  "name": "fractal",
+  "version": "0.2.0",
+  "description": "递归式需求驱动系统工程。同一套问题结构，在任何层级通用：问题→干系人→需求→逻辑→架构→（递归判断）→详设→实现→验证→确认。状态机内核 + 闸门拦截，宁停勿跳。Recursive requirements-driven systems engineering with enforced gates.",
+  "author": {
+    "name": "lgao"
+  },
+  "license": "MIT",
+  "keywords": [
+    "systems-engineering",
+    "requirements-driven",
+    "recursive-decomposition",
+    "gates",
+    "evidence-based"
+  ],
+  "homepage": "https://github.com/marcas-G/fractal",
+  "repository": "https://github.com/marcas-G/fractal"
+}

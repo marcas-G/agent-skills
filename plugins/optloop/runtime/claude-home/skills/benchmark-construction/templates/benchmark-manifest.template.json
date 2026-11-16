@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "status": "provisional",
+  "scenario": {
+    "name": "",
+    "reason": ""
+  },
+  "primary_metric": {
+    "name": "",
+    "direction": "lower",
+    "unit": "",
+    "source": "claude-designed",
+    "reason": ""
+  },
+  "benchmark": {
+    "commands": [],
+    "working_directory": ".",
+    "warmup_runs": 1,
+    "measured_runs": 8,
+    "timeout_sec": 1800,
+    "artifacts_dir": ".optloop-runtime/results"
+  },
+  "correctness": {
+    "commands": [],
+    "reason": ""
+  },
+  "review_policy": ".optloop-runtime/review-policy.json",
+  "known_weaknesses": [],
+  "next_improvements": []
+}

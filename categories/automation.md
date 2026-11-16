@@ -1,6 +1,5 @@
-# 自动化优化
+# 优化自动化 / Optimization
 
-- [optloop](https://github.com/marcas-G/optloop)：外部监督器 + Docker 隔离执行循环。
-- 入口 `/optloop:start-loop`，另有 stop/status/doctor/logs/reset 控制技能。
-- 依赖 bash、Python、Docker daemon，以及容器内 Claude CLI 和认证/环境配置。
-- 控制入口与运行时内部 Skill 必须作为整套插件维护，不直接拷贝单个文件。
+- [optloop](../skills/optloop/SKILL.md): 有约束的持续优化、对照评测与回滚 / Bounded optimization with isolated evaluation and rollback.
+- [完整 Claude 插件 / Native plugin](../plugins/optloop): `/plugin install optloop@agent-skills`.
+- 实际执行依赖 Docker、Python、bash 和授权的 Claude CLI。跨 Agent 的文字适配不会自动启动容器或监督进程。
